@@ -60,7 +60,7 @@ export function StationSelector({ value, onValueChange }: StationSelectorProps) 
 
   return (
     <Select value={value} onValueChange={onValueChange}>
-      <SelectTrigger className="w-[220px]">
+      <SelectTrigger className="w-[260px]">
         <Train className="size-4 text-muted-foreground" />
         <SelectValue placeholder="Select Station">
           {selectedStation ? `${selectedStation.name} ${selectedStation.nameEn}` : "Select Station"}

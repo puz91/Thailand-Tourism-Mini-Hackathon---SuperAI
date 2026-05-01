@@ -16,7 +16,7 @@ export function ChatContainer() {
   const scrollRef = useRef<HTMLDivElement>(null)
 
   // Get station name for display
-  const stationName = stations.find((s) => s.id === selectedStation)?.name
+  const stationName = stations.find((s) => s.id === selectedStation)?.nameEn
 
   // Auto scroll to bottom when new messages arrive
   const scrollToBottom = useCallback(() => {
@@ -78,9 +78,9 @@ export function ChatContainer() {
             <MessageSquare className="size-5" />
           </div>
           <div>
-            <h1 className="text-lg font-semibold">AI Chat</h1>
+            <h1 className="text-lg font-semibold">Bangkok Travel AI</h1>
             <p className="text-sm text-muted-foreground">
-              {stationName ? `สถานี${stationName}` : "Select a station to start"}
+              {stationName ? `${stationName} Station` : "Select a station to start chatting"}
             </p>
           </div>
         </div>
@@ -99,11 +99,17 @@ export function ChatContainer() {
                 <MessageSquare className="size-8 text-muted-foreground" />
               </div>
               <h2 className="mt-4 text-xl font-semibold">
-                Start a conversation
+                Discover places near your station
               </h2>
-              <p className="mt-2 max-w-sm text-muted-foreground">
-                Send a message to begin chatting with the AI assistant.
+              <p className="mt-2 text-muted-foreground text-sm">
+                Ask about places near BTS or MRT stations:
               </p>
+
+              <ul className="mt-2 text-sm text-muted-foreground space-y-1 text-left">
+                <li>• Cafés near BTS Siam</li>
+                <li>• Things to do near MRT Chatuchak</li>
+                <li>• Best restaurants around Asok</li>
+              </ul>
             </div>
           ) : (
             <>
