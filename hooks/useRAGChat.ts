@@ -7,49 +7,23 @@ export interface Message {
   content: string;
 }
 
-export interface PlaceResult {
-  id: number;
-  name: string;
-  category: string;
-  station: string;
-  line: string;
-  exit: string;
-  distance_meters: number;
-  walk_minutes: number;
-  details: string;
-  highlight: string;
-  open_hours: string;
-  price: string;
-  tags: string[];
-}
-
-export interface ChatState {
-  messages: Message[];
-  places: PlaceResult[];
-  isLoading: boolean;
-  error: string | null;
-}
-
 export function useRAGChat() {
-  const [state, setState] = useState<ChatState>({
-    messages: [],
-    places: [],
+  const [selectedStation, setSelectedStation] = useState<string>("");
+  const [state, setState] = useState({
+    messages: [] as Message[],
     isLoading: false,
-    error: null,
+    error: null as string | null,
   });
 
   const sendMessage = useCallback(async (userMessage: string) => {
     if (!userMessage.trim() || state.isLoading) return;
 
     const newUserMessage: Message = { role: "user", content: userMessage };
-    const updatedHistory = [...state.messages, newUserMessage];
-
-    setState((prev) => ({
-      ...prev,
-      messages: updatedHistory,
-      places: [],
-      isLoading: true,
-      error: null,
+    setState(prev => ({ 
+      ...prev, 
+      messages: [...prev.messages, newUserMessage], 
+      isLoading: true, 
+      error: null 
     }));
 
     try {
@@ -58,55 +32,28 @@ export function useRAGChat() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           message: userMessage,
-          // ✅ กรอง History ให้สะอาด: เอาเฉพาะข้อความที่มีเนื้อหาจริงๆ และ Trim หัวท้าย
-          history: state.messages
-            .filter(msg => msg.content && msg.content.trim() !== "")
-            .map(msg => ({
-              role: msg.role,
-              content: msg.content.trim()
-            })),
+          station: selectedStation,
+          history: state.messages.map(m => ({ role: m.role, content: m.content }))
         }),
       });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.error || `HTTP ${res.status}`);
-      }
-
       const data = await res.json();
-      
-      // ✅ ป้องกันกรณี AI ตอบกลับมาเป็นค่าว่าง
+      if (!res.ok) throw new Error(data.error || "Server Error");
+
       const assistantMessage: Message = {
         role: "assistant",
-        content: data.response || "มัคจังหาข้อมูลให้แล้ว แต่ดูเหมือนระบบขัดข้องเล็กน้อย ลองถามใหม่อีกครั้งนะคะ",
+        content: data.response || "มัคจังหาข้อมูลให้แล้ว แต่ระบบขัดข้องเล็กน้อยค่ะ",
       };
 
-      setState((prev) => ({
+      setState(prev => ({
         ...prev,
-        messages: [...updatedHistory, assistantMessage],
-        places: data.places_found || [],
+        messages: [...prev.messages, assistantMessage],
         isLoading: false,
       }));
-    } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : "เกิดข้อผิดพลาด";
-      setState((prev) => ({
-        ...prev,
-        messages: [
-          ...updatedHistory,
-          {
-            role: "assistant",
-            content: `⚠️ ขออภัยค่ะ เกิดข้อผิดพลาด: ${errorMsg}`,
-          },
-        ],
-        isLoading: false,
-        error: errorMsg,
-      }));
+    } catch (err: any) {
+      setState(prev => ({ ...prev, isLoading: false, error: err.message }));
     }
-  }, [state]);
+  }, [state.messages, state.isLoading, selectedStation]);
 
-  const clearChat = useCallback(() => {
-    setState({ messages: [], places: [], isLoading: false, error: null });
-  }, []);
-
-  return { ...state, sendMessage, clearChat };
+  return { ...state, sendMessage, selectedStation, setSelectedStation };
 }
