@@ -1,30 +1,32 @@
-import { NextResponse } from "next/server"
+import { NextRequest, NextResponse } from "next/server";
 
-export async function POST(request: Request) {
+const BACKEND_URL = process.env.BACKEND_URL || "http://localhost:8000";
+
+export async function POST(request: NextRequest) {
   try {
-    const { message, station } = await request.json()
+    const body = await request.json();
 
-    if (!message || typeof message !== "string") {
+    const backendRes = await fetch(`${BACKEND_URL}/api/chat`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (!backendRes.ok) {
+      const error = await backendRes.json().catch(() => ({ detail: "Backend error" }));
       return NextResponse.json(
-        { error: "Message is required" },
-        { status: 400 }
-      )
+        { error: error.detail || "Backend error" },
+        { status: backendRes.status }
+      );
     }
 
-    // Simulate AI response with a delay
-    // Replace this with your actual AI integration
-    await new Promise((resolve) => setTimeout(resolve, 1000))
-
-    // Echo response for demonstration
-    // In production, integrate with your AI provider here
-    const stationInfo = station ? `\n\nสถานีที่เลือก: ${station}` : ""
-    const response = `ได้รับข้อความของคุณ: "${message}"${stationInfo}\n\nนี่คือการตอบกลับตัวอย่าง สามารถเชื่อมต่อ AI provider จริงได้ใน API route นี้`
-
-    return NextResponse.json({ message: response })
-  } catch {
+    const data = await backendRes.json();
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("[/api/chat] Error:", error);
     return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    )
+      { error: "ไม่สามารถเชื่อมต่อกับ AI backend ได้" },
+      { status: 503 }
+    );
   }
 }
